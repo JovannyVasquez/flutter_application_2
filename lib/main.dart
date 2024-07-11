@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<ApiService>(
-          create: (_) => ApiService(baseUrl: 'https://ucf-club-and-event-manager-1c53fb944ab8.herokuapp.com'), // Replace with your backend URL
+          create: (_) => ApiService(baseUrl: 'https://ucf-club-and-event-manager-1c53fb944ab8.herokuapp.com/api/v1/users'), // Replace with your backend URL
         ),
       ],
       child: MaterialApp(
@@ -41,6 +41,8 @@ class _RegisterPageState extends State<RegisterPage> {
   String _userName = '';
   String _email = '';
   String _password = '';
+  String _firstName = '';
+  String _lastName = '';
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +83,22 @@ class _RegisterPageState extends State<RegisterPage> {
                   });
                 },
               ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'First Name'),
+                onChanged: (value) {
+                  setState(() {
+                    _firstName = value;
+                  });
+                },
+              ),
+              TextFormField(
+                decoration: const InputDecoration(labelText: 'Last Name'),
+                onChanged: (value) {
+                  setState(() {
+                    _lastName = value;
+                  });
+                },
+              ),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
@@ -89,10 +107,16 @@ class _RegisterPageState extends State<RegisterPage> {
                       'userName': _userName,
                       'email': _email,
                       'password': _password,
+                      'firstName': _firstName,
+                      'lastName': _lastName,
                     });
 
-                    //Print the status code
-                    print('Response status: ${response.statusCode}');
+                    //Print the url it is trying to access
+                    print(response.request!.url);
+
+                    //print status code and response body
+                    print(response.statusCode);
+                    print(response.body);
                   }
                 },
                 child: const Text('Register'),

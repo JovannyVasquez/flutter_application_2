@@ -57,7 +57,7 @@ class ApiService {
   //register
   Future<http.Response> registerUser(Map<String, dynamic> userData) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/signup'),
+      Uri.parse('$baseUrl/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(userData),
     );
