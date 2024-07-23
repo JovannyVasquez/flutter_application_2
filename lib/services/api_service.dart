@@ -74,6 +74,24 @@ class ApiService {
     return response;
   }
 
+  //get user info
+  Future<Map<String, dynamic>> getUserInfo(String email) async {
+    final response = await http.get(Uri.parse('$baseUrl/userInfo/$email'));
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } 
+    else {
+      throw Exception('Failed to load user info');
+    }
+  }
+
+  //Get user events
+  Future<http.Response> getUserEvents(String userId) async {
+    final url = Uri.parse('$baseUrl/$userId/events');
+    final response = await http.get(url);
+    return response;
+  }
   
 //Club endpoints
   //create

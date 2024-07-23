@@ -1,7 +1,50 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'services/api_service.dart';
+import 'models/club_model.dart';
 
+//Clubs
+List<Club> clubs = [
+    //Esports at UCF
+    Club(name: 'Esports at UCF', imagePath: 'assets/esports-ucf.png'),
+    //Knight Hacks
+    Club(name: 'Knight Hacks', imagePath: 'assets/knightHacks-logo.png'),
+    //UCF
+    Club(name: 'UCF General', imagePath: 'assets/club_logo.png'),
+    //Knights Experimental Rocketry
+    Club(name: 'Knights Experimental Rocketry', imagePath: 'assets/kxr-logo.png'),
+    //Society of Hispanic Professional Engineers
+    Club(name: 'Society of Hispanic Professional Engineers', imagePath: 'assets/shpelogo.png'),
+    //AI @ UCF
+    Club(name: 'AI @ UCF', imagePath: 'assets/aiUCF-logo.png'),
+    //Knights Racing BAJA
+    Club(name: 'Knights Racing BAJA', imagePath: 'assets/bajalogo.png'),
+    //VR Knights
+    Club(name: 'VR Knights', imagePath: 'assets/vrknightslogo.png'),
+    //Institute of Electrical and Electronics Engineers @ UCF
+    Club(name: 'Institute of Electrical and Electronics Engineers @ UCF', imagePath: 'assets/ieeelogo.png'),
+    //National Society of Black Engineers
+    Club(name: 'National Society of Black Engineers', imagePath: 'assets/nsbelogo.png'),
+    //4EVER KNIGHTS
+    Club(name: '4EVER KNIGHTS', imagePath: 'assets/4everknights.jpg'),
+    //Air Force ROTC
+    Club(name: 'Air Force ROTC', imagePath: 'assets/AFROTC.jpg'),
+    //American Society of Mechanical Engineers
+    Club(name: 'American Society of Mechanical Engineers', imagePath: 'assets/asme-logo.png'),
+    //Asian Student Association
+    Club(name: 'Asian Student Association', imagePath: 'assets/asa-logo.jpg'),
+    //Esports at UCF
+    Club(name: 'Esports at UCF', imagePath: 'assets/esports-ucf.png'),
+    //Florida Engineering Society
+    Club(name: 'Florida Engineering Society', imagePath: 'assets/fes-logo.jpg'),
+    //Knights Powerlifting
+    Club(name: 'Knights Powerlifting', imagePath: 'assets/powerlifting-logo.png'),
+    //Knights Satellite Club
+    Club(name: 'Knights Satellite Club', imagePath: 'assets/satellite-logo.png'),
+    //Out in Science, Technology, Engineering, and Mathematics
+    Club(name: 'Out in Science, Technology, Engineering, and Mathematics', imagePath: 'assets/oSTEM-logo.png'),
+  ];
 
 void main() {
   runApp(const MyApp());
@@ -54,35 +97,46 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
   bool _isLoggedIn = false;
+  // ignore: unused_field
+  Map<String, dynamic>? _userInfo;
+  List<Widget> _screens = [];
 
-  final List<Widget> _screens = [
-    const ClubsScreen(),
-    const SearchScreen(),
-    const EventsScreen(),
-    const ProfileScreen(),
-  ];
+  void _handleLogin(String email) async {
+  final apiService = Provider.of<ApiService>(context, listen: false);
+  try {
+    final userInfo = await apiService.getUserInfo(email);
+    // Sort events by date
+    List<dynamic> sortedEvents = List.from(userInfo['eventList'] ?? []);
+    sortedEvents.sort((a, b) => (a['date'] ?? '').compareTo(b['date'] ?? ''));
 
-  void _login() {
     setState(() {
       _isLoggedIn = true;
+      _userInfo = userInfo;
+      _screens = [
+        const ClubsScreen(),
+        const SearchScreen(),
+        EventsScreen(events: sortedEvents),
+        ProfileScreen(userInfo: userInfo),
+      ];
     });
+  } catch (e) {
+    // Handle error
+    print(e);
   }
-
-  void _logout() {
-    setState(() {
-      _isLoggedIn = false;
-    });
-  }
+}
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _isLoggedIn ? _screens[_currentIndex] : AuthScreen(onLogin: _login),
-      bottomNavigationBar: _isLoggedIn
-          ? BottomNavigationBar(
+    return _isLoggedIn
+        ? Scaffold(
+            body: IndexedStack(
+              index: _currentIndex,
+              children: _screens,
+            ),
+            bottomNavigationBar: BottomNavigationBar(
               backgroundColor: Colors.black,
-              selectedItemColor: Colors.white, // Set the color of the selected item
-              unselectedItemColor: Colors.yellow, // Set the color of the unselected items
+              selectedItemColor: Colors.white,
+              unselectedItemColor: Colors.yellow,
               currentIndex: _currentIndex,
               onTap: (index) {
                 setState(() {
@@ -107,63 +161,54 @@ class _HomePageState extends State<HomePage> {
                   label: 'Profile',
                 ),
               ],
-            )
-          : null,
-    );
+            ),
+          )
+        : AuthScreen(onLogin: _handleLogin);
   }
 }
 
-class AuthScreen extends StatelessWidget {
-  final void Function()? onLogin;
+class AuthScreen extends StatefulWidget {
+  final void Function(String email) onLogin;
 
   const AuthScreen({super.key, required this.onLogin});
+
+  @override
+  _AuthScreenState createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends State<AuthScreen> {
+  bool _showLogin = true;
+
+  void _toggleAuthMode() {
+    setState(() {
+      _showLogin = !_showLogin;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('UCF CLUBS & EVENTS'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => RegisterPage(onLogin: onLogin)),
-                );
-              },
-              child: const Text('Register', style: TextStyle(fontSize: 18)),
+        title: Text(_showLogin ? 'Login' : 'Register'),
+        actions: [
+          TextButton(
+            onPressed: _toggleAuthMode,
+            child: Text(
+              _showLogin ? 'Register' : 'Login',
+              style: const TextStyle(color: Colors.white),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).hintColor,
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage(onLogin: onLogin)),
-                );
-              },
-              child: const Text('Login', style: TextStyle(fontSize: 18)),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
+      body: _showLogin
+          ? LoginPage(onLogin: widget.onLogin)
+          : RegisterPage(onLogin: widget.onLogin),
     );
   }
 }
 
 class RegisterPage extends StatefulWidget {
-  final void Function()? onLogin;
+  final void Function(String email) onLogin;
 
   const RegisterPage({super.key, required this.onLogin});
 
@@ -173,150 +218,82 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-  String _userName = '';
-  String _email = '';
-  String _password = '';
-  String _firstName = '';
-  String _lastName = '';
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  void _register() async {
+    if (_formKey.currentState!.validate()) {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final email = _emailController.text;
+      final password = _passwordController.text;
+
+      final response = await apiService.registerUser({
+        'email': email,
+        'password': password,
+      });
+
+      if (response.statusCode == 200) {
+        widget.onLogin(email);
+      } else {
+        // Handle registration error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration failed: ${response.body}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final apiService = Provider.of<ApiService>(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              const SizedBox(height: 20),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Username',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: <Widget>[
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _emailController,
+              decoration: InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _userName = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your username';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 20),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your email';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _passwordController,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _email = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 20),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                obscureText: true,
-                onChanged: (value) {
-                  setState(() {
-                    _password = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  return null;
-                },
+              obscureText: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your password';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
               ),
-              const SizedBox(height: 20),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'First Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _firstName = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Last Name',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _lastName = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                ),
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    final response = await apiService.registerUser({
-                      'userName': _userName,
-                      'email': _email,
-                      'password': _password,
-                      'firstName': _firstName,
-                      'lastName': _lastName,
-                    });
-
-                    if (response.statusCode == 201) {
-                      // Successfully registered
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Registration successful')),
-                      );
-                      widget.onLogin?.call();
-                      Navigator.pop(context);
-                    } else {
-                      // Registration failed
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Registration failed: ${response.body}')),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Register', style: TextStyle(fontSize: 18)),
-              ),
-            ],
-          ),
+              onPressed: _register,
+              child: const Text('Register', style: TextStyle(fontSize: 18)),
+            ),
+          ],
         ),
       ),
     );
@@ -324,7 +301,7 @@ class _RegisterPageState extends State<RegisterPage> {
 }
 
 class LoginPage extends StatefulWidget {
-  final void Function()? onLogin;
+  final void Function(String email) onLogin;
 
   const LoginPage({super.key, required this.onLogin});
 
@@ -334,96 +311,82 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  String _email = '';
-  String _password = '';
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  void _login() async {
+    if (_formKey.currentState!.validate()) {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final email = _emailController.text;
+      final password = _passwordController.text;
+
+      final response = await apiService.loginUser({
+        'email': email,
+        'password': password,
+      });
+
+      if (response.statusCode == 200) {
+        widget.onLogin(email);
+      } else {
+        // Handle login error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${response.body}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final apiService = Provider.of<ApiService>(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: <Widget>[
-              const SizedBox(height: 20),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          children: <Widget>[
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _emailController,
+              decoration: InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                onChanged: (value) {
-                  setState(() {
-                    _email = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 20),
-              TextFormField(
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your email';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              controller: _passwordController,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                obscureText: true,
-                onChanged: (value) {
-                  setState(() {
-                    _password = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).hintColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                ),
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    final response = await apiService.loginUser({
-                      'email': _email,
-                      'password': _password,
-                    });
-
-                    if (response.statusCode == 200) {
-                      // Successfully logged in
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Login successful')),
-                      );
-                      widget.onLogin?.call();
-                      Navigator.pop(context);
-                    } else {
-                      // Login failed
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Login failed: ${response.body}')),
-                      );
-                    }
-                  }
-                },
-                child: const Text('Login', style: TextStyle(fontSize: 18)),
+              obscureText: true,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your password';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
               ),
-            ],
-          ),
+              onPressed: _login,
+              child: const Text('Login', style: TextStyle(fontSize: 18)),
+            ),
+          ],
         ),
       ),
     );
@@ -435,9 +398,13 @@ class ClubsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Assuming the first 2 clubs are 'featured' and the next 4 clubs are 'new'
+    List<Club> featuredClubs = clubs.sublist(0, 2); 
+    List<Club> newClubs = clubs.sublist(2, 6); 
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('UCF CLUBS & EVENTS'),
+        title: const Text('Knights Events & Clubs Portal'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -450,15 +417,21 @@ class ClubsScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
-              GridView.count(
+              GridView.builder(
                 shrinkWrap: true,
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                children: const [
-                  ClubCard(name: 'UCF Esports', imagePath: 'assets/club_logo.png'),
-                  ClubCard(name: 'Knight Hacks', imagePath: 'assets/club_logo.png'),
-                ],
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: featuredClubs.length,
+                itemBuilder: (context, index) {
+                  return ClubCard(
+                    name: featuredClubs[index].name,
+                    imagePath: featuredClubs[index].imagePath,
+                  );
+                },
               ),
               const SizedBox(height: 20),
               const Text(
@@ -466,12 +439,21 @@ class ClubsScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
-              GridView.count(
+              GridView.builder(
                 shrinkWrap: true,
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                children: List.generate(6, (index) => const ClubCard(name: 'UCF General', imagePath: 'assets/club_logo.png')),
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemCount: newClubs.length,
+                itemBuilder: (context, index) {
+                  return ClubCard(
+                    name: newClubs[index].name,
+                    imagePath: newClubs[index].imagePath,
+                  );
+                },
               ),
             ],
           ),
@@ -512,24 +494,83 @@ class ClubCard extends StatelessWidget {
   }
 }
 
-class SearchScreen extends StatelessWidget {
-  const SearchScreen({super.key});
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({Key? key}) : super(key: key);
+
+  @override
+  _SearchScreenState createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  List<Club> filteredClubs = [];
+  TextEditingController searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    filteredClubs = clubs; // Initialize with all clubs
+  }
+
+  void filterClubs(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        filteredClubs = clubs;
+      });
+    } else {
+      setState(() {
+        filteredClubs = clubs.where((club) {
+          return club.name.toLowerCase().contains(query.toLowerCase());
+        }).toList();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search'),
+        title: const Text('Search Clubs'),
       ),
-      body: const Center(
-        child: Text('Search Screen'),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                labelText: 'Search for a club',
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    searchController.clear();
+                    filterClubs('');
+                  },
+                ),
+              ),
+              onChanged: filterClubs,
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: filteredClubs.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  leading: Image.asset(filteredClubs[index].imagePath),
+                  title: Text(filteredClubs[index].name),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class EventsScreen extends StatelessWidget {
-  const EventsScreen({super.key});
+  final List<dynamic> events;
+
+  const EventsScreen({Key? key, required this.events}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -537,19 +578,27 @@ class EventsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Events'),
       ),
-      body: const SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Upcoming Events',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
-            EventCard(date: '01/01/2024', title: 'Football event', location: 'Location', description: 'Description'),
-            EventCard(date: '02/23/2024', title: 'Knight Hacks', location: 'Location', description: 'Description'),
-            EventCard(date: '03/15/2024', title: 'Graduation Day 1', location: 'Location', description: 'Description'),
+            const SizedBox(height: 10),
+            ...events.map((event) {
+              final eventDetails = (event['eventDetail'] as List<dynamic>).isNotEmpty
+                ? event['eventDetail'][0]
+                : {'topic': 'No topic', 'describe': 'No description available'};
+              return EventCard(
+                date: event['date'] ?? 'Unknown Date',
+                title: event['Ename'] ?? 'Untitled Event',
+                location: event['location'] ?? 'Unknown Location',
+                description: "${eventDetails['topic']}: ${eventDetails['describe']}",
+              );
+            }).toList(),
           ],
         ),
       ),
@@ -573,6 +622,11 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Format date and time
+    final dateTime = DateTime.tryParse(date) ?? DateTime.now();
+    final formattedDate = DateFormat('yyyy-MM-dd').format(dateTime);
+    final formattedTime = DateFormat('HH:mm').format(dateTime);
+
     return Card(
       color: Colors.grey[850],
       margin: const EdgeInsets.only(bottom: 16.0),
@@ -581,7 +635,8 @@ class EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(date, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(formattedDate, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(formattedTime, style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 5),
             Text(title, style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 5),
@@ -596,36 +651,81 @@ class EventCard extends StatelessWidget {
 }
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final Map<String, dynamic> userInfo;
+
+  const ProfileScreen({super.key, required this.userInfo});
 
   @override
   Widget build(BuildContext context) {
+    final firstName = userInfo['firstName'] ?? 'First Name';
+    final lastName = userInfo['lastName'] ?? 'Last Name';
+    //final userID = userInfo['_id'] ?? 'No ID';
+    final clubs = userInfo['clubList']?.map((club) => club['name']).toList() ?? [];
+    final events = userInfo['eventList']?.map((event) {
+      final eventDetails = (event['eventDetail'] as List<dynamic>).isNotEmpty
+        ? event['eventDetail'][0]
+        : {'topic': 'No topic', 'describe': 'No details available'}; // Safe access of the first element
+      return {
+        'date': event['date'] ?? 'Unknown Date',
+        'location': event['location'] ?? 'No Location',
+        'title': event['Ename'] ?? 'Untitled Event',
+        'description': eventDetails['describe'],
+        'topic': eventDetails['topic'],
+      };
+    }).toList() ?? [];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Bob Person', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text('$firstName $lastName', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             const Text('Your Clubs', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            GridView.count(
-              shrinkWrap: true,
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              children: const [
-                ClubCard(name: 'UCF General', imagePath: 'assets/club_logo.png'),
-                ClubCard(name: 'Knight Hacks', imagePath: 'assets/club_logo.png'),
-              ],
-            ),
-            const Spacer(),
+            clubs.isNotEmpty
+                ? GridView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: clubs.length,
+                    itemBuilder: (context, index) {
+                      return ClubCard(
+                        name: clubs[index],
+                        imagePath: 'assets/club_logo.png',
+                      );
+                    },
+                  )
+                : const Text('No clubs found'),
+            const SizedBox(height: 20),
+            const Text('Your Events', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 10),
+            events.isNotEmpty
+                ? ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: events.length,
+                    itemBuilder: (context, index) {
+                      return EventCard(
+                        date: events[index]['date'],
+                        title: events[index]['title'],
+                        location: events[index]['location'],
+                        description: "${events[index]['topic']}: ${events[index]['description']}",
+                      );
+                    },
+                  )
+                : const Text('No events found'),
+            const SizedBox(height: 30),
             Align(
-              alignment: Alignment.topRight,
+              alignment: Alignment.bottomRight,
               child: ElevatedButton(
                 onPressed: () {
                   // Implement logout functionality

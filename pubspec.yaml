@@ -12,6 +12,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  intl: ^0.19.0
   http: ^0.13.3
   provider: ^6.0.0
   flutter_localizations:
@@ -33,3 +34,21 @@ flutter:
     # Add assets from the images directory to the application.
     - assets/images/
     - assets/club_logo.png
+    - assets/4everknights.jpg
+    - assets/AFROTC.jpg
+    - assets/aiUCF-logo.png
+    - assets/asa-logo.jpg
+    - assets/asme-logo.png
+    - assets/bajalogo.png
+    - assets/esports-ucf.png
+    - assets/fes-logo.jpg
+    - assets/ieeelogo.png
+    - assets/knightHacks-logo.png
+    - assets/kxr-logo.png
+    - assets/nsbelogo.png
+    - assets/oSTEM-logo.png
+    - assets/powerlifting-logo.png
+    - assets/satellite-logo.png
+    - assets/shpelogo.png
+    - assets/ucfsports-image.jpg
+    - assets/vrknightslogo.png
