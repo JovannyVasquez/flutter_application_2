@@ -160,12 +160,12 @@ class ApiService {
     return response;
   }
 
-  //join club
-  Future<http.Response> joinClub(String clubId) async {
+  // Join club
+  Future<http.Response> joinClub(String userID, String clubId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/joinclub'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'clubId': clubId}),
+      body: jsonEncode({'userId': userID, 'clubId': clubId}),
     );
     return response;
   }
